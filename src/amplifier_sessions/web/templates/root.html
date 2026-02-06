@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amplifier Sessions - Projects</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+    function openDir(dirPath) {
+        fetch('/api/open-dir', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ path: dirPath })
+        })
+        .then(r => {
+            if (r.ok) {
+                console.log('Directory opened: ' + dirPath);
+            } else {
+                return r.json().then(data => {
+                    alert('Could not open directory: ' + (data.error || 'unknown error'));
+                });
+            }
+        })
+        .catch(e => alert('Error: ' + e.message));
+    }
+    </script>
+</head>
+<body>
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0;">🔍 Amplifier Projects</h1>
+        <a href="https://github.com/dluc/amplifier-sessions" target="_blank" title="View on GitHub" style="color: var(--color-text); text-decoration: none; font-size: 1.2rem; padding: 0.5rem;">
+            ★ GitHub
+        </a>
+    </header>
+
+    <main class="sessions-main">
+        {% if projects %}
+        <div class="sessions-list">
+            {% for project in projects %}
+            <div class="session-item session-item-main">
+                <!-- Project header - clickable to view project's sessions -->
+                <a href="/project/{{ project.slug }}" class="session-header-link">
+                    <div class="session-header">
+                        <div>
+                            <div class="session-title">{{ project.name or project.slug }}</div>
+                            {% if project.description %}
+                            <div class="session-description">{{ project.description }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="session-meta">
+                            <span class="meta-badge">📊 {{ project.session_count }} session{{ 's' if project.session_count != 1 else '' }}</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Project metadata -->
+                <div style="padding-left: 1rem; padding-right: 1rem; padding-bottom: 0.75rem; font-size: 0.85rem; color: var(--color-text-muted);">
+                    <div>Created: {{ project.created_at|format_datetime }}</div>
+                    <div>Last updated: {{ project.updated_at|humanize }}</div>
+                    <div style="margin-top: 0.5rem;">
+                        <a href="#" onclick="openDir('{{ project.path }}'); return false;" title="{{ project.path }}" style="color: var(--color-info); text-decoration: none; font-size: 0.85rem;">
+                            📁 Open folder
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding: 2rem; text-align: center; color: var(--color-text-muted);">
+            <p>No projects found. Start an Amplifier session in any directory to create a project.</p>
+        </div>
+        {% endif %}
+    </main>
+</body>
+</html>

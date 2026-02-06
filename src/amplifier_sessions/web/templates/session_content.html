@@ -1,0 +1,72 @@
+{% if view == 'events' %}
+    <div style="display: grid; grid-template-columns: 280px 1.5rem 1fr; gap: 0; max-width: 1440px; margin: 0 auto;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3>Filters</h3>
+            <form hx-post="/session/{{ session.id }}"
+                  hx-target="#timeline"
+                  hx-swap="innerHTML"
+                  hx-indicator="#loading-indicator">
+                
+                <fieldset>
+                    <label for="event_type">Event Type:</label>
+                    <input type="text" id="event_type" name="event_type" placeholder="tool_call,response,error">
+                </fieldset>
+                
+                <fieldset>
+                    <label for="agent_names">Agent Name:</label>
+                    <input type="text" id="agent_names" name="agent_names" placeholder="foundation:explorer,bug-hunter">
+                </fieldset>
+                
+                <fieldset>
+                    <label for="time_start">Start Time:</label>
+                    <input type="datetime-local" id="time_start" name="time_start">
+                </fieldset>
+
+                <fieldset>
+                    <label for="time_end">End Time:</label>
+                    <input type="datetime-local" id="time_end" name="time_end">
+                </fieldset>
+                
+                <fieldset>
+                    <label for="errors_only">
+                        <input type="checkbox" id="errors_only" name="errors_only"> Errors Only
+                    </label>
+                </fieldset>
+                
+                <fieldset>
+                    <label for="tool_calls">
+                        <input type="checkbox" id="tool_calls" name="tool_calls"> Tool Calls Only
+                    </label>
+                </fieldset>
+                
+                <fieldset>
+                    <label for="contains">Contains:</label>
+                    <input type="text" id="contains" name="contains" placeholder="Search text">
+                </fieldset>
+                
+                <button type="submit">Apply Filters</button>
+                <button type="reset">Reset</button>
+            </form>
+        </aside>
+
+        <!-- Gap -->
+        <div></div>
+
+        <!-- Timeline -->
+        <section class="timeline-container">
+            <h3 style="margin-top: 0;">Timeline ({{ event_indices|length }} / {{ events|length }} events)</h3>
+            <div id="timeline" class="timeline">
+                {% include 'timeline.html' %}
+            </div>
+        </section>
+    </div>
+
+{% elif view == 'transcript' %}
+    <section class="timeline-container" style="max-width: 1440px; margin: 0 auto;">
+        <h3 style="margin-top: 0;">Transcript ({{ transcript|length }} turns)</h3>
+        <div id="transcript" class="timeline">
+            {% include 'transcript_view.html' %}
+        </div>
+    </section>
+{% endif %}

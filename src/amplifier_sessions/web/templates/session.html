@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ session.title }} - Amplifier Sessions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{{ url_for('static', filename='htmx.min.js') }}"></script>
+</head>
+<body>
+    <!-- Fixed header -- layout matches list.html and projects.html:
+         [Back link] [Title] on the left, [GitHub] on the right. -->
+    <header style="position: fixed; top: 0; left: 0; right: 0; height: 60px; background-color: var(--color-white); border-bottom: 1px solid var(--color-border); z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 0 1rem;">
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <a href="/projects/{{ session.slug }}" style="color: var(--color-info); text-decoration: none; font-weight: 500; padding: 0.5rem 1rem; border: 1px solid var(--color-border); border-radius: 4px; transition: background 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;"><i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Sessions</a>
+            <h1 style="margin: 0; font-size: 1.5rem;">{{ session.title }}</h1>
+        </div>
+        <a href="https://github.com/dluc/amplifier-sessions" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--color-text-muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='var(--color-info)'" onmouseout="this.style.color='var(--color-text-muted)'" title="View on GitHub">
+            <i data-lucide="github" style="width: 16px; height: 16px;"></i> GitHub
+        </a>
+    </header>
+
+    <!-- Fixed control bar -->
+    <div style="position: fixed; top: 60px; left: 0; right: 0; height: 50px; background-color: var(--color-white); border-bottom: 1px solid var(--color-border); z-index: 99; display: flex; align-items: center; padding: 0 1rem; gap: 1.5rem; overflow-x: auto;">
+        <!-- View toggles -->
+        <label style="display: flex; gap: 0.5rem; align-items: center; margin: 0; white-space: nowrap;">
+            <input type="radio" name="view" value="transcript" {% if view == 'transcript' %}checked{% endif %} 
+                   hx-get="/session/{{ session.id }}?view=transcript" 
+                   hx-target="main"
+                   hx-swap="innerHTML"
+                   hx-indicator="#loading-indicator"
+                   style="margin: 0; cursor: pointer;">
+            <span>Transcript ({{ transcript|length }} turns)</span>
+        </label>
+        <label style="display: flex; gap: 0.5rem; align-items: center; margin: 0; white-space: nowrap;">
+            <input type="radio" name="view" value="events" {% if view == 'events' %}checked{% endif %} 
+                   hx-get="/session/{{ session.id }}?view=events" 
+                   hx-target="main"
+                   hx-swap="innerHTML"
+                   hx-indicator="#loading-indicator"
+                   style="margin: 0; cursor: pointer;">
+            <span>Events ({{ events|length }} total)</span>
+        </label>
+
+        <!-- Transcript-only toggles -->
+        <span id="transcript-separator" style="color: var(--color-border); margin: 0 0.5rem; display: {% if view == 'transcript' %}block{% else %}none{% endif %};">|</span>
+        <label id="show-thinking-label" style="display: {% if view == 'transcript' %}flex{% else %}none{% endif %}; gap: 0.5rem; align-items: center; margin: 0; white-space: nowrap;">
+            <input type="checkbox" id="show-thinking" checked style="margin: 0; cursor: pointer;">
+            <span>Show Thinking</span>
+        </label>
+        <label id="show-tool-calls-label" style="display: {% if view == 'transcript' %}flex{% else %}none{% endif %}; gap: 0.5rem; align-items: center; margin: 0; white-space: nowrap;">
+            <input type="checkbox" id="show-tool-calls" checked style="margin: 0; cursor: pointer;">
+            <span>Show Tool Calls</span>
+        </label>
+
+        <!-- Common toggles -->
+        <span id="common-separator" style="color: var(--color-border); margin: 0 0.5rem;">|</span>
+        <label id="reverse-order-label" style="display: flex; gap: 0.5rem; align-items: center; margin: 0; white-space: nowrap;">
+            <input type="checkbox" id="reverse-order" style="margin: 0; cursor: pointer;">
+            <span>Reverse Order</span>
+        </label>
+    </div>
+
+    <!-- Main content area -->
+    <main style="display: block; width: 100%; max-width: 1800px; margin: 0 auto; padding-top: 110px; padding-left: 1rem; padding-right: 1rem; padding-bottom: 1rem; box-sizing: border-box;">
+        <!-- Folder links -->
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: var(--spacing-lg); margin-bottom: 1rem; font-size: 0.9rem;">
+            {% if session.working_dir %}
+            <div>
+                <a href="#" onclick="openDir('{{ session.working_dir }}'); return false;" title="{{ session.working_dir }}" style="color: var(--color-info); text-decoration: none; font-weight: 500;">
+                    <i data-lucide="folder" style="width: 14px; height: 14px; vertical-align: middle;"></i> Project folder: {{ session.working_dir|shorten_path }}
+                </a>
+            </div>
+            {% endif %}
+            <div>
+                <a href="#" onclick="openDir('{{ session.path }}'); return false;" title="{{ session.path }}" style="color: var(--color-info); text-decoration: none; font-weight: 500;">
+                    <i data-lucide="folder" style="width: 14px; height: 14px; vertical-align: middle;"></i> Session folder: {{ session.path|shorten_path }}
+                </a>
+            </div>
+        </div>
+
+        {% if view == 'events' %}
+            <div style="display: grid; grid-template-columns: 280px 1.5rem 1fr; gap: 0; height: fit-content;">
+                <!-- Sidebar -->
+                <aside class="sidebar">
+                    <h3>Filters</h3>
+                    <form hx-post="/session/{{ session.id }}"
+                          hx-target="#timeline"
+                          hx-swap="innerHTML"
+                          hx-indicator="#loading-indicator">
+                        
+                        <fieldset>
+                            <label for="event_type">Event Type:</label>
+                            <input type="text" id="event_type" name="event_type" placeholder="tool_call,response,error">
+                        </fieldset>
+                        
+                        <fieldset>
+                            <label for="agent_names">Agent Name:</label>
+                            <input type="text" id="agent_names" name="agent_names" placeholder="foundation:explorer,bug-hunter">
+                        </fieldset>
+                        
+                        <fieldset>
+                            <label for="time_start">Start Time:</label>
+                            <input type="datetime-local" id="time_start" name="time_start">
+                        </fieldset>
+
+                        <fieldset>
+                            <label for="time_end">End Time:</label>
+                            <input type="datetime-local" id="time_end" name="time_end">
+                        </fieldset>
+                        
+                        <fieldset>
+                            <label for="errors_only">
+                                <input type="checkbox" id="errors_only" name="errors_only"> Errors Only
+                            </label>
+                        </fieldset>
+                        
+                        <fieldset>
+                            <label for="tool_calls">
+                                <input type="checkbox" id="tool_calls" name="tool_calls"> Tool Calls Only
+                            </label>
+                        </fieldset>
+                        
+                        <fieldset>
+                            <label for="contains">Contains:</label>
+                            <input type="text" id="contains" name="contains" placeholder="Search text">
+                        </fieldset>
+                        
+                        <button type="submit">Apply Filters</button>
+                        <button type="reset">Reset</button>
+                    </form>
+                </aside>
+
+                <!-- Gap -->
+                <div></div>
+
+                <!-- Timeline -->
+                <section class="timeline-container">
+                    <h3 style="margin-top: 0;">Timeline ({{ event_indices|length }} / {{ events|length }} events)</h3>
+                    <div id="timeline" class="timeline">
+                        {% include 'timeline.html' %}
+                    </div>
+                </section>
+            </div>
+
+        {% elif view == 'transcript' %}
+            <section class="timeline-container" style="width: 100%; box-sizing: border-box;">
+                <h3 style="margin-top: 0;">Transcript ({{ transcript|length }} turns)</h3>
+                <div id="transcript" class="timeline" style="width: 100%; box-sizing: border-box;">
+                    {% include 'transcript_view.html' %}
+                </div>
+            </section>
+        {% endif %}
+    </main>
+
+    <!-- Global loading indicator -->
+    <div id="loading-indicator" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 1rem 2rem; background: rgba(0,0,0,0.8); color: white; font-weight: 500; border-radius: 8px; z-index: 9999;">⏳ LOADING</div>
+
+    <script>
+        htmx.config.timeout = 30000;
+        document.addEventListener('htmx:afterSwap', () => {
+            document.getElementById('loading-indicator').style.display = 'none';
+            updateControlBar();
+            setupTranscriptToggles();
+            setupReverseToggle();
+        });
+        document.addEventListener('change', (e) => {
+            if (e.target.name === 'view') {
+                document.getElementById('loading-indicator').style.display = 'block';
+            }
+        });
+
+        function updateControlBar() {
+            const isTranscript = document.querySelector('input[name="view"]:checked').value === 'transcript';
+            
+            // Update transcript toggles visibility
+            document.getElementById('transcript-separator').style.display = isTranscript ? 'block' : 'none';
+            document.getElementById('show-thinking-label').style.display = isTranscript ? 'flex' : 'none';
+            document.getElementById('show-tool-calls-label').style.display = isTranscript ? 'flex' : 'none';
+        }
+
+        function setupTranscriptToggles() {
+            const thinkingToggle = document.getElementById('show-thinking');
+            const toolCallsToggle = document.getElementById('show-tool-calls');
+            const transcriptContainer = document.getElementById('transcript');
+            
+            if (!transcriptContainer) return;
+            
+            function updateVisibility() {
+                const showThinking = thinkingToggle ? thinkingToggle.checked : true;
+                const showToolCalls = toolCallsToggle ? toolCallsToggle.checked : true;
+                
+                const turns = transcriptContainer.querySelectorAll('[data-content-type]');
+                turns.forEach(turn => {
+                    const contentType = turn.getAttribute('data-content-type');
+                    let shouldShow = true;
+                    
+                    if (contentType === 'thinking' && !showThinking) {
+                        shouldShow = false;
+                    } else if (!showToolCalls && (contentType === 'tool_call' || contentType === 'tool_execution')) {
+                        shouldShow = false;
+                    }
+                    
+                    turn.style.display = shouldShow ? '' : 'none';
+                });
+            }
+            
+            if (thinkingToggle) thinkingToggle.addEventListener('change', updateVisibility);
+            if (toolCallsToggle) toolCallsToggle.addEventListener('change', updateVisibility);
+            updateVisibility();
+        }
+
+        function applyReverse() {
+            const reverseToggle = document.getElementById('reverse-order');
+            
+            if (!reverseToggle) return;
+            
+            // Find the container - could be #timeline (events) or #transcript (transcript view)
+            let container = document.getElementById('timeline');
+            if (!container) {
+                container = document.getElementById('transcript');
+            }
+            
+            if (!container) return;
+            
+            if (reverseToggle.checked) {
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column-reverse';
+            } else {
+                container.style.display = '';
+                container.style.flexDirection = '';
+            }
+        }
+        
+        function setupReverseToggle() {
+            const reverseToggle = document.getElementById('reverse-order');
+            
+            if (!reverseToggle) return;
+            
+            // Remove any existing listeners to avoid duplicates
+            const newToggle = reverseToggle.cloneNode(true);
+            reverseToggle.parentNode.replaceChild(newToggle, reverseToggle);
+            
+            // Add listener to the new toggle
+            newToggle.addEventListener('change', applyReverse);
+            
+            // Apply reverse immediately if it's already checked (e.g., after HTMX swap)
+            applyReverse();
+        }
+
+        // Initial setup
+        lucide.createIcons();
+        updateControlBar();
+        setupTranscriptToggles();
+        setupReverseToggle();
+    </script>
+</body>
+</html>

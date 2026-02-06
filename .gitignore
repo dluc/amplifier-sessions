@@ -1,0 +1,10 @@
+__pycache__
+.DS_Store
+TODO-FEATURES.md
+AGENTS.md
+.design
+.vs
+.dev
+.idea
+*.log
+*.pyc

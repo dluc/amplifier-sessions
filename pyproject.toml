@@ -1,0 +1,94 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "amplifier-sessions"
+version = "0.1.0"
+description = "Rich session analysis tool for Amplifier - browse events, filter by type/agent/time, view transcripts"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "MADE Team", email = "amplifier@microsoft.com" }
+]
+keywords = ["amplifier", "session", "analysis", "viewer", "debugger"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Debuggers",
+]
+requires-python = ">=3.10"
+
+dependencies = [
+    "flask>=3.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "pyright>=1.1.0",
+]
+
+[project.scripts]
+amplifier-sessions = "amplifier_sessions.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/amplifier_sessions"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "--strict-markers"
+markers = [
+    "integration: marks tests as integration (deselect with '-m \"not integration\"')",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # Pyflakes
+    "I",     # isort
+    "C4",    # flake8-comprehensions
+    "B",     # flake8-bugbear
+    "UP",    # pyupgrade
+]
+ignore = [
+    "E501",  # Line too long (ruff format handles this)
+]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist",
+]
+
+[tool.ruff.isort]
+known-first-party = ["amplifier_sessions"]
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/__pycache__"]
+pythonVersion = "3.10"
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+reportMissingImports = false
+
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+include = '\.pyi?$'

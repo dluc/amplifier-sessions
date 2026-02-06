@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amplifier Sessions</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #111827;
+            color: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        /* Subtle code backdrop */
+        body::before {
+            content: "$ amplifier sessions\nevent_type: tool_call\nagent: foundation:explorer\nstatus: completed\ntimestamp: 2026-02-10T18:26:55Z";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-family: "Monaco", "Menlo", monospace;
+            font-size: 0.75rem;
+            color: rgba(107, 114, 128, 0.15);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 2rem;
+            pointer-events: none;
+            z-index: -1;
+            line-height: 1.6;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        h1 .accent {
+            color: #3b82f6;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            font-weight: 400;
+            color: #d1d5db;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: white;
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            margin-bottom: 6rem;
+        }
+
+        .cta-button:hover {
+            background-color: #2563eb;
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+        }
+
+        .cta-button:active {
+            transform: scale(0.98);
+        }
+
+        footer {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.875rem;
+            margin-top: auto;
+        }
+
+        footer a {
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        footer a:hover {
+            color: #f3f4f6;
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            main {
+                padding: 2rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Explore Your <span class="accent">AI Agent Sessions</span> in Depth</h1>
+        <p class="subtitle">Powerful session viewer for Amplifier AI agent data. Analyze events, transcripts, and performance metrics across all your sessions.</p>
+        <a href="/projects/" class="cta-button">Browse Projects</a>
+    </main>
+
+    <footer>
+        <p>
+            <a href="https://github.com/dluc/amplifier-sessions" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="github" style="width: 16px; height: 16px;"></i> Amplifier Sessions on GitHub
+            </a>
+        </p>
+    </footer>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

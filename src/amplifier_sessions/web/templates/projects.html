@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amplifier Sessions - Projects</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --color-success: #10b981;
+            --color-error: #ef4444;
+            --color-warning: #f59e0b;
+            --color-info: #3b82f6;
+            --color-neutral: #6b7280;
+            --color-text: #1f2937;
+            --color-text-muted: #6b7280;
+            --color-bg: #f9fafb;
+            --color-border: #e5e7eb;
+            --color-bg-dark: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: white;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .back-button {
+            color: var(--color-info);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background: var(--color-bg);
+        }
+
+        .github-link {
+            color: var(--color-text);
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .github-link:hover {
+            color: var(--color-info);
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .projects-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 800px;
+        }
+
+        .project-card {
+            background: white;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            /* No cursor:pointer -- the card itself is not clickable.
+               It contains 3 distinct links (title, project folder,
+               sessions folder) that must each be independently
+               clickable.  Previously the whole card had an onclick
+               handler that swallowed clicks on the inner folder links. */
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            border-color: var(--color-info);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Project title -- styled as a prominent link to sessions page */
+        .project-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .project-name a {
+            color: var(--color-text);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .project-name a:hover {
+            color: var(--color-info);
+        }
+
+        /* Folder links inside project cards */
+        .project-folder-links {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .project-folder-links a {
+            color: var(--color-info);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .project-folder-links a:hover {
+            text-decoration: underline;
+        }
+
+        .project-description {
+            font-size: 0.9375rem;
+            color: var(--color-text-muted);
+            margin-bottom: 0.3rem;
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .project-meta {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--color-text-muted);
+            padding-top: 1rem;
+            /* border-top: 1px solid var(--color-border); */
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--color-text-muted);
+        }
+
+        .empty-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--color-text);
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            header h1 {
+                font-size: 1.25rem;
+            }
+
+            main {
+                padding: 1rem;
+            }
+
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <a href="/" class="back-button"><i data-lucide="arrow-left" style="width: 16px; height: 16px; vertical-align: middle;"></i> Home</a>
+            <h1>Projects</h1>
+        </div>
+        <a href="https://github.com/dluc/amplifier-sessions" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--color-text-muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='var(--color-info)'" onmouseout="this.style.color='var(--color-text-muted)'" title="View on GitHub">
+            <i data-lucide="github" style="width: 16px; height: 16px;"></i> GitHub
+        </a>
+    </header>
+
+    <main>
+        {% if projects %}
+            <div class="projects-grid">
+                {% for project in projects %}
+                    <!-- BUG FIX: Card is NOT clickable as a whole. Previously the
+                         entire div had an onclick that navigated to the sessions
+                         page, which swallowed clicks on the folder links inside.
+                         Now the card contains 3 independent links:
+                           1. Title    -> sessions page (/projects/<slug>)
+                           2. Project  -> opens project folder in OS file manager
+                           3. Sessions -> opens sessions folder in OS file manager
+                         BUG FIX: Folder links previously called /api/open-folder
+                         which does not exist. The correct endpoint is /api/open-dir. -->
+                    <div class="project-card">
+                        <div class="project-name">
+                            <!-- Link 1: Title links to the sessions list page -->
+                            <a href="/projects/{{ project.slug }}">
+                            {% if project.name %}
+                                {{ project.name }}
+                            {% else %}
+                                <span style="color: var(--color-text-muted);">Unnamed Project</span>
+                            {% endif %}
+                            </a>
+                        </div>
+                        {% if project.description %}
+                            <div class="project-description">{{ project.description }}</div>
+                        {% else %}
+                            <div class="project-description" style="color: #d1d5db; font-style: italic;">No description available</div>
+                        {% endif %}
+                        {% if project.root_session_names %}
+                        <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0; font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.7; list-style: disc;">
+                            {% for sname in project.root_session_names %}
+                            <li>{{ sname }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+
+                        <div class="project-folder-links">
+                            {% if project.working_dir %}
+                            <!-- Link 2: Open project working directory in OS file manager -->
+                            <a href="#" onclick="fetch('/api/open-dir', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({path: '{{ project.working_dir }}'})}).catch(e => console.error(e)); return false;" title="Open project folder">
+                                <i data-lucide="folder" style="width: 14px; height: 14px; vertical-align: middle;"></i> Project: {{ project.working_dir|shorten_path }}
+                            </a>
+                            {% endif %}
+                            <!-- Link 3: Open session data directory in OS file manager -->
+                            <a href="#" onclick="fetch('/api/open-dir', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({path: '{{ project.path }}'})}).catch(e => console.error(e)); return false;" title="Open sessions folder">
+                                <i data-lucide="folder" style="width: 14px; height: 14px; vertical-align: middle;"></i> Sessions: {{ project.path|shorten_path }}
+                            </a>
+                        </div>
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <i data-lucide="bar-chart-2" style="width: 14px; height: 14px;"></i>
+                                <span>{{ project.session_count }} session{{ 's' if project.session_count != 1 else '' }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                                <span title="{{ project.created_at.isoformat() }}">Created {{ project.created_at.strftime('%b %d, %Y') }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                                <span title="{{ project.updated_at.isoformat() }}">Updated {{ project.updated_at.strftime('%b %d, %Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h2>No projects found</h2>
+                <p>No Amplifier projects detected yet. Run <code style="background: var(--color-bg); padding: 0.25rem 0.5rem; border-radius: 3px;">amplifier</code> from a project directory to create sessions.</p>
+            </div>
+        {% endif %}
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amplifier Sessions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* First/last message preview inside session cards.
+           Truncated to 3 lines by default; click to expand. */
+        .message-preview {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .message-bubble {
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            background: var(--color-bg-light, #f9fafb);
+            border-left: 3px solid var(--color-neutral);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .message-bubble:hover {
+            border-left-color: var(--color-info);
+        }
+        .message-bubble.user   { border-left-color: var(--color-info); }
+        .message-bubble.assistant { border-left-color: var(--color-success); }
+        .message-role {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--color-text-muted);
+            margin-bottom: 0.2rem;
+        }
+        .message-text {
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--color-text);
+            line-height: 1.5;
+            /* Truncate to ~3 lines by default */
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .message-bubble.expanded .message-text {
+            -webkit-line-clamp: unset;
+            display: block;
+        }
+    </style>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{{ url_for('static', filename='htmx.min.js') }}"></script>
+    <script>
+    function openDir(dirPath) {
+        fetch('/api/open-dir', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ path: dirPath })
+        })
+        .then(r => {
+            if (r.ok) {
+                console.log('Directory opened: ' + dirPath);
+            } else {
+                return r.json().then(data => {
+                    alert('Could not open directory: ' + (data.error || 'unknown error'));
+                });
+            }
+        })
+        .catch(e => alert('Error: ' + e.message));
+    }
+    
+    function toggleAgentDetails(button) {
+        const detailsDiv = button.nextElementSibling;
+        const isHidden = detailsDiv.style.display === 'none';
+        detailsDiv.style.display = isHidden ? 'block' : 'none';
+        
+        const icon = button.querySelector('.toggle-icon');
+        icon.textContent = isHidden ? '▼' : '▶';
+        button.querySelector('.toggle-text').textContent = isHidden ? 'Hide details' : 'Show details';
+    }
+
+    /* Toggle a message preview between truncated and expanded. */
+    function toggleMessage(el) {
+        const isExpanded = el.classList.toggle('expanded');
+        el.title = isExpanded ? 'Click to collapse' : 'Click to expand';
+    }
+    </script>
+</head>
+<body>
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <a href="/projects/" style="color: var(--color-info); text-decoration: none; font-weight: 500; padding: 0.5rem 1rem; border: 1px solid var(--color-border); border-radius: 4px; transition: background 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;"><i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Projects</a>
+            <h1 style="margin: 0;">Sessions</h1>
+        </div>
+        <a href="https://github.com/dluc/amplifier-sessions" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--color-text-muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='var(--color-info)'" onmouseout="this.style.color='var(--color-text-muted)'" title="View on GitHub">
+            <i data-lucide="github" style="width: 16px; height: 16px;"></i> GitHub
+        </a>
+    </header>
+
+    <main class="sessions-main">
+        <!-- Folder links at the top -->
+        {% if sessions_dir %}
+        <div class="folders-section">
+            <div class="folder-link-item">
+                <a href="#" onclick="openDir('{{ sessions_dir }}'); return false;" title="{{ sessions_dir }}">
+                    <i data-lucide="folder" style="width: 14px; height: 14px; vertical-align: middle;"></i> Sessions: {{ sessions_dir|shorten_path }}
+                </a>
+            </div>
+            
+            {% set first_main_session = sessions[0][0] if sessions and not sessions[0][0].parent_id else None %}
+            {% if first_main_session and first_main_session.working_dir %}
+            <div class="folder-link-item">
+                <a href="#" onclick="openDir('{{ first_main_session.working_dir }}'); return false;" title="{{ first_main_session.working_dir }}">
+                    <i data-lucide="folder" style="width: 14px; height: 14px; vertical-align: middle;"></i> Project: {{ first_main_session.working_dir|shorten_path }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="sessions-list">
+            {% for session_tuple in sessions %}
+                {% set session = session_tuple[0] %}
+                {% set nesting_level = session_tuple[1] %}
+                <div class="session-item {% if nesting_level > 0 %}session-item-child{% else %}session-item-main{% endif %}" style="margin-left: {{ nesting_level * 2 }}rem;">
+                    <!-- Main session -->
+                    {% if not session.parent_id %}
+                        <!-- Session header with name/title - clickable to open session -->
+                        <a href="/session/{{ session.id }}" class="session-header-link">
+                            <div class="session-header">
+                                {% if session.name %}
+                                <h2 class="session-name">{{ session.name }}</h2>
+                                {% endif %}
+                                <div class="session-meta-row">
+                                    {% if session.bundle %}
+                                    <div class="session-meta-item">
+                                        <span class="meta-label">Bundle:</span>
+                                        <span class="meta-value">{{ session.bundle }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if session.model %}
+                                    <div class="session-meta-item">
+                                        <span class="meta-label">Model:</span>
+                                        <span class="meta-value">{{ session.model }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if session.description %}
+                            <p class="session-description">{{ session.description }}</p>
+                            {% endif %}
+                        </a>
+                        
+                        <!-- First/last transcript messages (truncated, click to expand) -->
+                        {% if session.first_message_role or session.last_message_role %}
+                        <div class="message-preview">
+                            {% if session.first_message_role %}
+                            <div class="message-bubble {{ session.first_message_role }}" onclick="toggleMessage(this)" title="Click to expand">
+                                <div class="message-role">{{ session.first_message_role }}</div>
+                                <div class="message-text">{{ session.first_message_content }}</div>
+                            </div>
+                            {% endif %}
+                            {% if session.last_message_role and session.last_message_content != session.first_message_content %}
+                            <div class="message-bubble {{ session.last_message_role }}" onclick="toggleMessage(this)" title="Click to expand">
+                                <div class="message-role">{{ session.last_message_role }} (last)</div>
+                                <div class="message-text">{{ session.last_message_content }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Stats and timestamps inside main session box -->
+                        <div class="session-stats-row">
+                            <div class="stat-item">
+                                <span class="stat-value">{{ session.event_count }}</span>
+                                <span class="stat-label">events</span>
+                                {%- if session.events_size %}<span class="stat-size">({{ session.events_size|format_bytes }})</span>{% endif %}
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">{{ session.transcript_turns }}</span>
+                                <span class="stat-label">turns</span>
+                                {%- if session.transcript_size %}<span class="stat-size">({{ session.transcript_size|format_bytes }})</span>{% endif %}
+                            </div>
+                            <div class="session-times-inline">
+                                <span class="session-updated">{{ session.updated_at|humanize }}</span>
+                                <span class="session-sep">•</span>
+                                <span class="session-created" title="{{ session.created_at|format_datetime }}">{{ session.created_at.strftime('%Y-%m-%d') }}</span>
+                            </div>
+                        </div>
+                    
+                    <!-- Agent session -->
+                    {% else %}
+                        <div class="session-agent-header">
+                            <div class="agent-badge">Agent</div>
+                            <h3 class="agent-name"><a href="/session/{{ session.id }}">{{ session.agent_name }}</a></h3>
+                        </div>
+                        
+                        {% if session.agent_description or session.agent_instruction %}
+                        <div class="agent-collapsible-section">
+                            <button class="agent-toggle-btn" onclick="toggleAgentDetails(this)">
+                                <span class="toggle-icon">▶</span>
+                                <span class="toggle-text">Show details</span>
+                            </button>
+                            <div class="agent-details" style="display: none;">
+                                {% if session.agent_description %}
+                                <div class="agent-description-box">
+                                    <span class="detail-label">Description:</span>
+                                    <pre class="agent-text">{{ session.agent_description }}</pre>
+                                </div>
+                                {% endif %}
+                                
+                                {% if session.agent_instruction %}
+                                <div class="agent-instruction-box">
+                                    <span class="detail-label">Instruction:</span>
+                                    <pre class="agent-text">{{ session.agent_instruction }}</pre>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- First/last transcript messages (truncated, click to expand) -->
+                        {% if session.first_message_role or session.last_message_role %}
+                        <div class="message-preview">
+                            {% if session.first_message_role %}
+                            <div class="message-bubble {{ session.first_message_role }}" onclick="toggleMessage(this)" title="Click to expand">
+                                <div class="message-role">{{ session.first_message_role }}</div>
+                                <div class="message-text">{{ session.first_message_content }}</div>
+                            </div>
+                            {% endif %}
+                            {% if session.last_message_role and session.last_message_content != session.first_message_content %}
+                            <div class="message-bubble {{ session.last_message_role }}" onclick="toggleMessage(this)" title="Click to expand">
+                                <div class="message-role">{{ session.last_message_role }} (last)</div>
+                                <div class="message-text">{{ session.last_message_content }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Stats and timestamps inside agent session box -->
+                        <div class="session-stats-row">
+                            <div class="stat-item">
+                                <span class="stat-value">{{ session.event_count }}</span>
+                                <span class="stat-label">events</span>
+                                {%- if session.events_size %}<span class="stat-size">({{ session.events_size|format_bytes }})</span>{% endif %}
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">{{ session.transcript_turns }}</span>
+                                <span class="stat-label">turns</span>
+                                {%- if session.transcript_size %}<span class="stat-size">({{ session.transcript_size|format_bytes }})</span>{% endif %}
+                            </div>
+                            <div class="session-times-inline">
+                                <span class="session-updated">{{ session.updated_at|humanize }}</span>
+                                <span class="session-sep">•</span>
+                                <span class="session-created" title="{{ session.created_at|format_datetime }}">{{ session.created_at.strftime('%Y-%m-%d') }}</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Global loading indicator -->
+    <div id="loading-indicator" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 1rem 2rem; background: rgba(0,0,0,0.8); color: white; font-weight: 500; border-radius: 8px; z-index: 9999;">⏳ LOADING</div>
+
+    <script>
+        lucide.createIcons();
+        htmx.config.timeout = 30000;
+    </script>
+</body>
+</html>

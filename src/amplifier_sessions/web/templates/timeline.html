@@ -1,0 +1,99 @@
+{% if event_indices %}
+    {% for idx in event_indices %}
+        {% set event = events[idx] %}
+        {% set prev_idx = event_indices[loop.index0 - 1] if loop.index0 > 0 else none %}
+        {% set prev_event = events[prev_idx] if prev_idx is not none else none %}
+        {% set time_delta = (event.timestamp - prev_event.timestamp).total_seconds() if prev_event else 0 %}
+        
+        <details class="event event-{{ event.type }}" style="margin-bottom: 0.25rem;" data-event-index="{{ idx }}">
+            <summary style="cursor: pointer; padding: 0.35rem 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                {% if event.type == "response" %}
+                    <span class="event-type response">{{ event.type }}</span>
+                {% elif event.type == "error" %}
+                    <span class="event-type error">{{ event.type }}</span>
+                {% elif event.type == "tool_call" %}
+                    <span class="event-type tool_call">{{ event.type }}{% if event.tool_name %}: <strong>{{ event.tool_name }}</strong>{% endif %}</span>
+                {% elif event.type == "warning" %}
+                    <span class="event-type warning">{{ event.type }}</span>
+                {% else %}
+                    <span class="event-type">{{ event.type }}</span>
+                {% endif %}
+
+                {% if event.agent_id %}
+                    <code style="font-size: 0.8rem; color: var(--color-text-muted);">{{ event.agent_id }}</code>
+                {% endif %}
+
+                {% if event.error_msg %}
+                    <span style="color: var(--color-error); font-size: 0.9rem; margin-left: auto;">⚠ Error</span>
+                {% endif %}
+                
+                <span style="margin-left: auto; display: flex; gap: 0.5rem; align-items: center; font-weight: normal; font-size: 0.85rem; color: var(--color-text-muted); white-space: nowrap;">
+                    {% if time_delta > 0 %}
+                        <span style="color: {% if time_delta > 5 %}#ff6b6b{% elif time_delta > 1 %}#ffa500{% else %}#4CAF50{% endif %};">+{{ '%.1f' % time_delta }}s</span>
+                    {% endif %}
+                    <span>{{ event.timestamp.astimezone().strftime('%H:%M:%S') }}</span>
+                </span>
+            </summary>
+
+            <div style="padding: 0.35rem 0.5rem; padding-top: 0; border-top: 1px solid var(--color-border);">
+                {% if event.agent_id %}
+                <div style="margin-bottom: 0.15rem;">
+                    <strong style="font-size: 0.85rem;">Agent:</strong> <code style="font-size: 0.8rem;">{{ event.agent_id }}</code>
+                </div>
+                {% endif %}
+
+                {% if event.tool_name and event.type != "tool_call" %}
+                <div style="margin-bottom: 0.15rem;">
+                    <strong style="font-size: 0.85rem;">Tool:</strong> <code style="font-size: 0.8rem;">{{ event.tool_name }}</code>
+                </div>
+                {% endif %}
+
+                {% if event.error_msg %}
+                <div style="color: var(--color-error); margin-bottom: 0.25rem;">
+                    <strong style="font-size: 0.85rem;">Error:</strong> {{ event.error_msg }}
+                </div>
+                {% endif %}
+
+                {% if event.metadata and event.metadata.get('content') %}
+                <div style="margin-bottom: 0.25rem;">
+                    <strong style="font-size: 0.85rem;">Content:</strong>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; margin: 0.25rem 0;">{{ event.metadata.get('content', '') }}</pre>
+                </div>
+                {% endif %}
+
+                {% if event.metadata and event.metadata.get('message') and event.type != 'error' %}
+                <div style="margin-bottom: 0.25rem;">
+                    <strong style="font-size: 0.85rem;">Message:</strong>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; margin: 0.25rem 0;">{{ event.metadata.get('message', '') }}</pre>
+                </div>
+                {% endif %}
+
+                {% if event.metadata and event.type == 'tool_call' and event.metadata.get('arguments') %}
+                <div style="margin-bottom: 0.25rem;">
+                    <strong style="font-size: 0.85rem;">Arguments:</strong>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; margin: 0.25rem 0;">{{ event.metadata.get('arguments', {}) | tojson(indent=2) }}</pre>
+                </div>
+                {% endif %}
+
+                {% if event.metadata and event.metadata.get('result') %}
+                <div style="margin-bottom: 0.25rem;">
+                    <strong style="font-size: 0.85rem;">Result:</strong>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; margin: 0.25rem 0;">{{ event.metadata.get('result', '') }}</pre>
+                </div>
+                {% endif %}
+
+                {% if event.metadata and event.metadata|length > 0 %}
+                <details style="margin-top: 0.25rem;">
+                    <summary style="cursor: pointer; color: var(--color-text-muted); font-size: 0.75rem; font-weight: normal;">Raw metadata</summary>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.7rem; margin: 0.25rem 0; margin-top: 0.25rem;">{{ event.metadata | tojson(indent=2) }}</pre>
+                </details>
+                {% endif %}
+            </div>
+        </details>
+    {% endfor %}
+{% else %}
+    <div class="empty-state" style="padding: var(--spacing-xl);">
+        <h3>No events match the current filters</h3>
+        <p>Try adjusting your filter criteria</p>
+    </div>
+{% endif %}

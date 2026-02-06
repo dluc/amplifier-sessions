@@ -1,0 +1,101 @@
+{% if transcript %}
+    {% for turn in transcript %}
+        {% if turn.content_type == 'thinking' %}
+            {% set border_color = 'var(--color-success)' %}
+            {% set label_color = 'var(--color-success)' %}
+            {% set label_text = 'THINKING' %}
+        {% elif turn.content_type == 'tool_call' %}
+            {% set border_color = 'var(--color-info)' %}
+            {% set label_color = 'var(--color-info)' %}
+            {% set label_text = 'TOOL REQUEST' %}
+        {% elif turn.role == 'user' %}
+            {% set border_color = 'var(--color-info)' %}
+            {% set label_color = 'var(--color-info)' %}
+            {% set label_text = 'USER' %}
+        {% elif turn.role == 'assistant' %}
+            {% set border_color = 'var(--color-warning)' %}
+            {% set label_color = 'var(--color-warning)' %}
+            {% set label_text = 'ASSISTANT' %}
+        {% elif turn.role == 'tool' %}
+            {% set border_color = 'var(--color-info)' %}
+            {% set label_color = 'var(--color-info)' %}
+            {% set label_text = 'TOOL EXECUTION' %}
+        {% else %}
+            {% set border_color = 'var(--color-error)' %}
+            {% set label_color = 'var(--color-error)' %}
+            {% set label_text = turn.role.upper() %}
+        {% endif %}
+        
+        <details class="turn turn-{{ turn.role }} turn-{{ turn.content_type }}" style="width: 100%; box-sizing: border-box; margin-bottom: 0.15rem;" data-content-type="{% if turn.role == 'tool' %}tool_execution{% else %}{{ turn.content_type }}{% endif %}" data-role="{{ turn.role }}">
+            <summary style="width: 100%; box-sizing: border-box; cursor: pointer; padding: 0.25rem 0.4rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; border-left: 4px solid {{ border_color }}; font-size: 0.95rem;">
+                <span style="text-transform: uppercase; font-size: 0.75rem; font-weight: 600; color: {{ label_color }}; min-width: {% if turn.content_type == 'thinking' %}60px{% else %}45px{% endif %};">
+                    {{ label_text }}
+                </span>
+                {% if turn.role == 'tool' or turn.content_type == 'tool_call' %}
+                <span style="color: var(--color-text-muted); font-size: 0.9rem; font-weight: 600;">
+                    {{ turn.metadata.get('name', 'unknown') }}
+                    {% if turn.metadata.get('tool_id') %}
+                    <span style="color: var(--color-text-muted); font-size: 0.75rem; font-weight: normal; margin-left: 0.25rem; font-family: monospace;">({{ turn.metadata.get('tool_id') }})</span>
+                    {% endif %}
+                </span>
+                {% endif %}
+                {% if turn.role == 'user' %}
+                <span style="color: var(--color-text-muted); font-size: 0.9rem; flex: 1; font-weight: normal; word-break: break-word; white-space: pre-line;">{{ turn.content.strip() }}</span>
+                {% elif turn.content_type == 'thinking' %}
+                <span style="color: var(--color-text-muted); font-size: 0.9rem; flex: 1; font-weight: normal; word-break: break-word; white-space: pre-line;">{{ turn.content.strip() }}</span>
+                {% elif turn.role == 'assistant' %}
+                <span style="color: var(--color-text-muted); font-size: 0.9rem; flex: 1; font-weight: normal; word-break: break-word; white-space: pre-line;">{{ turn.content.strip() }}</span>
+                {% elif turn.role != 'tool' %}
+                <span style="color: var(--color-text-muted); font-size: 0.9rem; flex: 1; word-break: break-word; white-space: pre-line; font-weight: normal;">{{ turn.content.strip() }}</span>
+                {% endif %}
+                {% if turn.timestamp %}
+                <span style="margin-left: auto; font-weight: normal; font-size: 0.85rem; color: var(--color-text-muted); white-space: nowrap;">
+                    {{ turn.timestamp.astimezone().strftime('%H:%M:%S') }}
+                </span>
+                {% endif %}
+            </summary>
+
+            <div style="padding: 0.5rem 0.75rem; padding-top: 0; border-top: 1px solid var(--color-border);">
+                {% if turn.content_type == 'thinking' %}
+                <div class="turn-content">
+                    <strong style="font-size: 0.85rem;">Thinking:</strong>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; margin: 0.25rem 0; white-space: pre-wrap; word-wrap: break-word;">{{ turn.content }}</pre>
+                </div>
+                {% endif %}
+
+                {% if turn.role == 'assistant' %}
+                <div class="turn-content">
+                    <strong style="font-size: 0.85rem;">Content:</strong>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; margin: 0.25rem 0; white-space: pre-wrap; word-wrap: break-word;">{{ turn.content }}</pre>
+                </div>
+                {% endif %}
+                
+                {% if turn.content_type == 'tool_call' and turn.content %}
+                <div class="turn-content">
+                    <strong style="font-size: 0.85rem;">Content:</strong>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; margin: 0.25rem 0; white-space: pre-wrap; word-wrap: break-word;">{{ turn.content }}</pre>
+                </div>
+                {% endif %}
+                
+                {% if turn.role == 'tool' and turn.content %}
+                <div class="turn-content">
+                    <strong style="font-size: 0.85rem;">Result:</strong>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; margin: 0.25rem 0; white-space: pre-wrap; word-wrap: break-word;">{{ turn.content }}</pre>
+                </div>
+                {% endif %}
+
+                {% if turn.metadata and turn.metadata|length > 0 %}
+                <details style="margin-top: 0.25rem;">
+                    <summary style="cursor: pointer; color: var(--color-text-muted); font-size: 0.75rem; font-weight: normal;">Metadata</summary>
+                    <pre style="background: var(--color-white); padding: 0.5rem; border-radius: 4px; overflow-x: auto; font-size: 0.7rem; margin: 0.25rem 0; margin-top: 0.25rem;">{{ turn.metadata | tojson(indent=2) }}</pre>
+                </details>
+                {% endif %}
+            </div>
+        </details>
+    {% endfor %}
+{% else %}
+    <div class="empty-state" style="padding: var(--spacing-lg); text-align: center;">
+        <h3>No transcript available</h3>
+        <p>This session does not have a transcript.</p>
+    </div>
+{% endif %}
